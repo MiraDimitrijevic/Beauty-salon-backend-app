@@ -75,13 +75,13 @@ class ServiceController extends Controller
         $validator = Validator::make($request->all() , [
             'name'=> 'string|required|max:50|unique:services,name',
             'cost'=>'required|numeric|min:0|max:30000',
-            'description'=>'string|max:500',
+            'description'=>'max:500',
             'duration'=>'required|numeric|min:5|max:300' 
         ]);
 
         
         if ($validator->fails())
-            return response()->json($validator->errors());
+            return response()->json(['error'=>$validator->errors(), 'success'=>false]);
 
             $service=Service::create([
              'name'=>$request->name,
@@ -90,7 +90,7 @@ class ServiceController extends Controller
              'duration'=>$request->duration,
             ]);
 
-            return response()->json(['success'=>true,'service'=> new ServiceResource($service)]);
+            return response()->json(['success'=>true,'serviceId'=> $service->id], 201);
     }
 
     /**
@@ -101,6 +101,9 @@ class ServiceController extends Controller
      */
     public function show(Service $service)
     {
+        if(is_null($service)){
+            return response()->json('Service does not exist.',404);
+        }
         return new ServiceResource($service);
 
     }
@@ -128,20 +131,20 @@ class ServiceController extends Controller
         $validator = Validator::make($request->all() , [
             'name'=> 'string|required|max:50',
             'cost'=>'required|numeric|min:0|max:30000',
-            'description'=>'string|max:500',
+            'description'=>'max:500',
             'duration'=>'required|numeric|min:5|max:300' 
         ]);
 
         
         if ($validator->fails())
-            return response()->json($validator->errors());
+        return response()->json(['error'=>$validator->errors(), 'success'=>false]);
 
             $service->name=$request->name;
             $service->cost=$request->cost;
             $service->description=$request->description;
             $service->duration=$request->duration;
             $service->save();
-            return response()->json(['success'=>true,'service'=> new ServiceResource($service)]);
+            return response()->json(['success'=>true]);
 
     }
 

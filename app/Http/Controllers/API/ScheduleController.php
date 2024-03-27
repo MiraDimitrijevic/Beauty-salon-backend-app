@@ -54,7 +54,7 @@ class ScheduleController extends Controller
             });
 
             if($schedule){
-         return response()->json(['success' => false,'message'=>'Schedule already exists!']);
+         return response()->json(['success' => false,'message'=>'Schedule already exists!'], 404);
 
             }
             else {
@@ -73,7 +73,7 @@ class ScheduleController extends Controller
         ]);
 
 
-        return response()->json(['success' => true,'message'=>'Schedule has been successfully created!']);
+        return response()->json(['success' => true,'message'=>'Schedule has been successfully created!'], 201);
     }
     }
 

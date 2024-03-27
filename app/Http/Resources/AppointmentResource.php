@@ -18,6 +18,7 @@ class AppointmentResource extends JsonResource
     public function toArray($request)
     {
         return [
+            'id'=>$this->resource->id,
             'date'=>$this->resource->date,
             'start_time'=>$this->resource->start_time,
             'end_time'=>$this->resource->end_time,

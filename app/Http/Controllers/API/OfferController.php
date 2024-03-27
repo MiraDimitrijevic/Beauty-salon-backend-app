@@ -18,7 +18,7 @@ class OfferController extends Controller
      */
     public function index(Request $request)
     {
-        $service_id = $request->service_id;
+        $service_id = $request->input('service_id');
     
         $offers = Offer::with('employee')->where('service_id', $service_id)->get();
         if ($offers->isEmpty()) {
@@ -71,7 +71,7 @@ class OfferController extends Controller
          'service_id'=>$request->service_id,
          'user_id'=>$request->user_id
         ]);
-        return response()->json(['success'=>true, 'message'=>'Offer is successfully created!']);
+        return response()->json(['success'=>true, 'message'=>'Offer is successfully created!'], 201);
     }
     }
 

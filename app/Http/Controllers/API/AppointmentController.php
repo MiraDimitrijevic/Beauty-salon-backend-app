@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\API;
-
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\AppointmentItem;
@@ -90,6 +90,10 @@ class AppointmentController extends Controller
                     return response()->json(['success'=>false,'message'=>'Employee '. $employee->name . ' does not work that day! Try with different date!']);
                 } 
                 $service=Service::find($item["service_id"]);
+                if(is_null($service)){
+                    return response()->json(['success'=>false,'message'=>'Service does not exist!'],404);
+
+                }
                 $item["end_time"] = Carbon::parse($item["start_time"])->addMinutes($service->duration)->format('H:i');
                 $scheduleStart = Carbon::parse($schedule->start_time);
                 $scheduleEnd = Carbon::parse($schedule->end_time);
@@ -102,7 +106,6 @@ class AppointmentController extends Controller
                 if ($scheduleEnd->lt($itemEndCarbon)) {
                     return response()->json(['success'=>false,'message'=>'Employee '. $employee->name . ' does not work that late! Try with different time!']);
                 }
-                //ni uslov za start ti nije dobar, moe da se zakaze termin pred kraj zavrseta termina!
                 $appointmentItem = AppointmentItem::with(['offer', 'appointment'])
                 ->whereHas('offer', function ($query) use ($user_id) {
                     $query->where('user_id', '=', $user_id);
@@ -110,10 +113,15 @@ class AppointmentController extends Controller
                 ->whereHas('appointment', function ($query) use ($date) {
                     $query->where('date', '=', $date);
                 })
-                ->where('start_time', '<=', $item["start_time"])
-                ->where('end_time', '>', $item["end_time"])/*->orWhere(function ($query) use ($user_id, $date, $item) {
-                 $query->where('some_column', '=', 'some_value');
-                })*/->get();
+                ->where(function ($query) use ($item) {
+                    $query->where(DB::raw('appointment_items.start_time'), '>=', $item["start_time"])
+                          ->where(DB::raw('appointment_items.start_time'), '<', $item["end_time"])
+                          ->orWhere(function ($query) use ($item) {
+                              $query->where(DB::raw('appointment_items.start_time'), '<=', $item["start_time"])
+                                    ->where(DB::raw('appointment_items.end_time'), '>', $item["start_time"]);
+                          });
+                })
+                ->get();
                 if(count($appointmentItem) != 0) {
                     return response()->json(['success'=>false,'message'=>'Employee already has an appointment at ' . $appointmentItem[0]->start_time . ' . Try with different time!']);
                 }
@@ -122,7 +130,6 @@ class AppointmentController extends Controller
                 });
                 if($offer==null){
 return response()->json(['success'=>false,'message'=>'Employee ' . $employee->name . ' does not provide ' . $service->name . '! Try with different employee!']);
-
                 }
                 $appointmentStartCarbon = Carbon::createFromFormat('H:i', $appointmentStart);
                 $appointmentEndCarbon = Carbon::createFromFormat('H:i', $appointmentEnd);
@@ -157,7 +164,7 @@ return response()->json(['success'=>false,'message'=>'Employee ' . $employee->na
                 'end_time'=>$item["end_time"]
             ]);
           }
-          return response()->json(['success'=>true,'message'=>'Appointment has been successfully scheduled!', 'appointment'=>$appointment]);
+          return response()->json(['success'=>true,'message'=>'Appointment has been successfully scheduled!', 'appointment'=>$appointment], 201);
             
     }
 
@@ -232,7 +239,7 @@ return response()->json(['success'=>false,'message'=>'Employee ' . $employee->na
         }
         $appointment=Appointment::find($appointment_id);
         if(is_null($appointment)){
-            return response()->json('There is no such appointment!',404);
+            return response()->json('There is no such an appointment!',404);
         }
         $appointment->appointmentItem()->delete();
         $appointment->delete();

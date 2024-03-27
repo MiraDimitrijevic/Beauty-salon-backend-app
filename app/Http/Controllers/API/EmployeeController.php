@@ -65,7 +65,7 @@ class EmployeeController extends Controller
         ]);
 
 
-        return response()->json(['success' => true, 'employee'=> new EmployeeResource($employee)]);
+        return response()->json(['success' => true, 'employee'=> new EmployeeResource($employee)], 201);
     }
 
     /**
