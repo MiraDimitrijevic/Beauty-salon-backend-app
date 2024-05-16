@@ -15,7 +15,9 @@ class CreateEmployeesTable extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->string('profession');
-            $table->string('imageURL')->nullable();
+            $table->string('file_name')->nullable(); 
+            $table->binary('image_data');
+            $table->string('mime_type')->nullable();
             $table->foreignId('user_id')->primary();
             $table->timestamps();
         });

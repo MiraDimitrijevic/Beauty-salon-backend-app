@@ -40,6 +40,7 @@ Route::group(['middleware' => ['auth:api']], function () {
  Route::resource('service', ServiceController::class)->only(['show', 'index']);
  Route::resource('offer', OfferController::class)->only(['index']);
  Route::resource('appointment', AppointmentController::class)->only(['index', 'show']);
+ Route::resource('employee', EmployeeController::class)->only(['index']);
  Route::post('/logout', [AuthController::class, 'logout']);
 
  Route::middleware(['user.type:manager'])->group(function () {
@@ -54,6 +55,8 @@ Route::group(['middleware' => ['auth:api']], function () {
 Route::middleware(['user.type:client'])->group(function () {
     Route::resource('appointment', AppointmentController::class)->only(['store','update','destroy']);
     Route::resource('appointmentItem/{appointment_id}', AppointmentItemController::class)->only(['index','store']);
+    Route::get('/availableTime/{service_id}/{user_id}/{date}', [AvailableTimeController::class, 'index']);
+
 });
 
 

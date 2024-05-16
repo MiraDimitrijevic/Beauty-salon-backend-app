@@ -11,7 +11,9 @@ class Employee extends Model
 
     protected $fillable = [
         'profession',
-        'imageURL',
+        'file_name',
+        'image_data',
+        'mime_type',
         'user_id'
     ];
 

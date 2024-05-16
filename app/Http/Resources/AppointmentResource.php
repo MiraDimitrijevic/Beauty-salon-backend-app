@@ -24,7 +24,7 @@ class AppointmentResource extends JsonResource
             'end_time'=>$this->resource->end_time,
             'cost'=>$this->resource->cost,
             'canceled'=>$this->resource->canceled,
-            'services' => $this->resource->appointmentItem,         
+            'items' => $this->resource->appointmentItem,         
         ];
     }
 }

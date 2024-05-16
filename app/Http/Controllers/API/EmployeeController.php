@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\API;
-
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\User;
@@ -19,7 +19,7 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        //
+        return ['employees'=> EmployeeResource::collection(Employee::get())];
     }
 
     /**
@@ -40,32 +40,35 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:50',
-            'email' => 'required|string|max:40|email|unique:users',
-            'password'=> array ('required', 'string', 'min:8', 'regex:/[a-z]/', 'regex:/[A-Z]/' , 'regex:/[0-9]/', 'regex:/[@$!%*#?&]/'),
-            'profession'=> 'required|string|max:30'
-                ]);
 
+        $base64Image = $request->input('image');
+        $fileName = $request->input('file_name', uniqid()); 
+        $imageData = base64_decode($base64Image, true);
+        Log::channel('single')->info('MD123.', ['image' =>$imageData==true ]);
 
-        if ($validator->fails())
-            return response()->json($validator->errors());
+            $validator = Validator::make($request->all(), [
+                'profession'=> 'required|string|max:30'
+            ]);
+            if ($validator->fails())
+            return response()->json([$validator->errors(), 'success' => false]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $request->user['name'],
+            'email' => $request->user['email'],
+            'password' => Hash::make($request->user['password']),
             'userType'=>'employee'
         ]);
 
         $employee = Employee::create ([
             'user_id'=>$user->id,
             'profession'=>$request->profession,
-            'imageURL'=>$request->imageURL,
+            'file_name' => $fileName,
+            'image_data'=> base64_decode($base64Image),
+            'mime_type '=> 'image/png'            
         ]);
 
 
-        return response()->json(['success' => true, 'employee'=> new EmployeeResource($employee)], 201);
+        return response()->json(['success' => true, 'employee'=> new EmployeeResource($employee), 'employeeId'=>$user->id], 201);
     }
 
     /**

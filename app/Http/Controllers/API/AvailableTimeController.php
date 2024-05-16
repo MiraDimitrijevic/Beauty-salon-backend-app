@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\AvailableTime;
 use App\Models\AppointmentItem;
 use App\Models\Schedule;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 
 class AvailableTimeController extends Controller
@@ -21,6 +21,10 @@ class AvailableTimeController extends Controller
      */
     public function index(int $service_id, int $user_id, string $date)
     {
+
+
+       $filteredTimes = [];
+
         $validator = Validator::make([
             'date' => $date,], [
             'date'=>'required|date_format:Y-m-d|after:today'
@@ -42,27 +46,27 @@ class AvailableTimeController extends Controller
             $start_time=$schedule->start_time;
             $end_time=$schedule->end_time;
             $times= $this->generateTimeArray($start_time, $end_time);
-            $filteredTimes = array_filter($times, function ($service_start) use ($service){
+            $filteredTimes = array_filter($times, function ($service_start) use ($user_id, $date, $service) {
                 $service_end = Carbon::parse($service_start)->addMinutes($service->duration)->format('H:i');
-                $appointmentItem = AppointmentItem::with(['offer', 'appointment'])
-                ->whereHas('offer', function ($query) use ($user_id) {
-                    $query->where('user_id', '=', $user_id);
-                })
-                ->whereHas('appointment', function ($query) use ($date) {
-                    $query->where('date', '=', $date);
-                })
-                ->where('start_time', '<=', $service_start)
-                ->where('end_time', '>=', $service_end)
-                ->get();
-                //врати уколико нијe nadjen takav appointmentItem i revidiraj uslove za start i end time
-                //proveri i da li je duzina trajanja usluge takva da premasuje kraj radnog vremena
-                //verovatno ces brisati appoitnment model i migraciju itd
-                //sutra middleware-i i ovo ako stignes
-                //prekosutra sortiranje i paginacija za USLUGE, zaposlene kod OFFER-a, appoitnment-iteme po danu
-                //mozda i neki filter za cenu itd
-                //napraviti i kontroler kojim se prikazuju zakazanitermini za svakog zaposlenog za taj dan
-                return strtotime($service_start) >= strtotime('15:00');
-            });
+               return $appointmentItem = AppointmentItem::with(['offer', 'appointment'])
+                    ->whereHas('offer', function ($query) use ($user_id) {
+                        $query->where('user_id', '=', $user_id);
+                    })
+                    ->whereHas('appointment', function ($query) use ($date) {
+                        $query->where('date', '=', $date);
+                    })
+                    ->where(function ($query) use ($service_start, $service_end) {
+                        $query->where(DB::raw('appointment_items.start_time'), '>=', $service_start)
+                              ->where(DB::raw('appointment_items.start_time'), '<', $service_end)
+                              ->orWhere(function ($subQuery) use ($service_start) {
+                                  $subQuery->where(DB::raw('appointment_items.start_time'), '<=', $service_start)
+                                           ->where(DB::raw('appointment_items.end_time'), '>', $service_start);
+                              });
+                    })
+                    ->get();
+            
+                });
+                return response()->json(['success' => true,'filteredTimes'=>$filteredTimes]);
 
 
         }

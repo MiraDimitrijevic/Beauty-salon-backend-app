@@ -18,21 +18,16 @@ class EmployeeResource extends JsonResource
 
     public function toArray($request)
     {
-        $imageURL = $this->resource->imageURL;
-        if (Storage::disk('public')->exists($imageURL)) {
-        $imageData = Storage::disk('public')->get($imageURL);
- 
+        $base64Image = base64_encode($this->resource->image_data);
+
         return [
             'profession' => $this->resource->profession,
-            'imageURL' => 'data:image/png;base64,' . base64_encode($imageData),
+            'file_name' => $this->resource->file_name,
+            'mime_type' => $this->resource->mime_type,
+            'image' => $base64Image,
             'user'=> new UserResource($this->resource->user)
         ];
     }
-    else {
-        return [
-            'profession' => $this->resource->profession,
-            'user'=> new UserResource($this->resource->user)
-        ];
-    }
-    }
+  
+
 }
